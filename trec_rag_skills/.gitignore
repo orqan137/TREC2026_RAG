@@ -1,0 +1,4 @@
+.env.local
+.curlrc.pyserini-rest
+.DS_Store
+.env*

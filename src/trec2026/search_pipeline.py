@@ -63,6 +63,8 @@ def candidate_env_files(project_root: Path, explicit: Path | None = None) -> lis
     paths = [
         project_root / "trec-rag-skills" / ".env",
         project_root / "trec-rag-skills" / ".env.local",
+        project_root / "trec_rag_skills" / ".env",
+        project_root / "trec_rag_skills" / ".env.local",
         project_root / ".env",
         project_root / ".env.local",
     ]

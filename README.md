@@ -1,68 +1,92 @@
 # TREC2026 RAG Retrieval Pipeline
 
-이 저장소는 TREC RAG 2026 트랙 준비를 위한 작업 공간이다. 현재 구현 범위는
-ClimbMix/Pyserini REST API를 사용하는 Retrieval baseline이며, 이후 RAG 생성
-단계를 붙일 수 있도록 입력, 출력, 캐시, 검증 구조를 분리했다.
+## 1. 문서 개요
 
-작성 기준일은 2026-05-31이며, 세부 규칙은 로컬에 보관한
-`trec-rag-skills` 스냅샷을 기준으로 정리했다. 최종 제출 전에는 공식 TREC RAG
-사이트의 최신 제출 일정, 업로드 절차, 포털 요구사항을 다시 확인해야 한다.
+본 저장소는 TREC RAG 2026 트랙 대응을 위한 Retrieval 및 RAG 시스템 구축
+작업공간이다. 현 단계의 구현 범위는 ClimbMix 기반 Pyserini REST Retrieval
+baseline이며, RAG 생성 단계 확장을 고려한 입력, 출력, 캐시, 검증 구조를 포함한다.
 
-## 1. 프로젝트 목표
+기준 문서는 `trec_rag_skills/skills` 하위의 skill 및 reference 문서이다. 해당
+자료는 2026-05-31 현재 로컬 작업공간에 반영된 지침을 기준으로 한다. 대회 최종 제출
+전 공식 TREC RAG 사이트의 제출 일정, 업로드 절차, 포털 요구사항 확인이 별도로
+필요하다.
 
-본 프로젝트의 목표는 TREC RAG 2026의 Retrieval task와 RAG task에 대응하는
-재현 가능한 검색 파이프라인을 구축하는 것이다. 1차 구현은 다음을 수행한다.
+## 2. 기준 자료 구성
 
-- topic JSONL 파일을 읽는다.
-- topic title을 기본 검색 query로 사용한다.
-- Pyserini REST API를 통해 ClimbMix index에서 top-k 문서를 검색한다.
-- TREC Retrieval runfile 형식의 `r_output_trec_rag_2026.tsv`를 생성한다.
-- 생성된 runfile의 열 개수, topic coverage, rank, score ordering을 검증한다.
+| 구분 | 경로 | 역할 |
+| --- | --- | --- |
+| Intro skill | `trec_rag_skills/skills/trec-rag-intro` | 트랙 개요, 공개 상태, 참가 안내, 조직 정보 |
+| Track guidelines | `trec_rag_skills/skills/trec-rag-2026-track-guidelines` | 2026 task 정의, 제출 형식, baseline, validation 기준 |
+| Pyserini REST API | `trec_rag_skills/skills/pyserini-rest-api` | API endpoint, 인증, 검색, 문서 조회, 오류 처리 |
+| 구현 코드 | `src/trec2026/search_pipeline.py` | Retrieval 실행, 캐시 저장, runfile 생성, runfile 검증 |
+| 실행 wrapper | `scripts/trec_search.py` | CLI 진입점 |
+| 기본 설정 | `configs/search_pipeline.json` | index, hits, output path, cache path, run id |
 
-## 2. Skill 정리
+## 3. TREC RAG 2026 트랙 요약
 
-로컬 참조 자료는 `trec-rag-skills` 폴더에 있다. 이 폴더는 API token이 들어 있는
-로컬 `.env`와 별도 git metadata를 포함하므로 GitHub 업로드 대상에서 제외했다.
+TREC RAG 2026은 retrieval-augmented generation 시스템 평가를 위한 Text REtrieval
+Conference 트랙이다. 평가 대상은 대규모 corpus 검색과 LLM 기반 응답 생성을 결합한
+end-to-end RAG 시스템이며, retrieval component와 generation component의 분리 분석도
+고려한다.
 
-### `trec-rag-intro`
+공개 기준 정보는 다음과 같다.
 
-TREC RAG 2026의 개요를 설명하는 skill이다. 트랙 목표, 공개 상태, 주최자,
-참가 안내 같은 고수준 질문에 사용한다. task 규칙, output format, baseline
-구축 방법은 이 skill이 아니라 `trec-rag-2026-track-guidelines`를 따른다.
+| 항목 | 내용 |
+| --- | --- |
+| 트랙 상태 | 2026년 트랙 재개 공지 |
+| Corpus | release 예정 |
+| Test topics | TBD |
+| Baselines | TBD |
+| Submission deadline | TBD |
+| Results and judgments | TBD |
+| Conference | TREC 2026, 2026년 11월 |
 
-### `trec-rag-2026-track-guidelines`
+참가 안내 기준은 NIST/Evalbase 등록, Google Groups 및 Discord 참여, Google Groups
+신청 시 `TREC RAG` 명시, Google Groups 문제 발생 시 `njedidi@uwaterloo.ca` 연락이다.
 
-2026 task 구현과 제출 형식을 정의하는 핵심 skill이다.
+## 4. Skill 지시사항 종합
 
-- 사용 가능한 task: Retrieval (`R`), Retrieval-Augmented Generation (`RAG`)
-- 2026에서 제거된 task: 2025의 Augmented Generation-only (`AG`)
-- 기본 corpus/index: ClimbMix, `climbmix-400b`
-- topic input: `trec_rag_2026_queries.jsonl`
-- Retrieval output: `r_output_trec_rag_2026.tsv`
-- RAG output: `rag_output_trec_rag_2026.jsonl`
-- baseline retrieval depth: topic당 top 100
+### 4.1 `trec-rag-intro`
 
-Retrieval 제출 형식은 표준 TREC runfile이다.
+적용 범위는 트랙의 고수준 설명이다. 포함 항목은 목표, 현황, 일정 placeholder,
+주최자, 참가 안내이다. task 규칙, 제출 파일 형식, baseline 구현, Pyserini/ClimbMix
+세부 설정은 이 skill의 적용 범위가 아니며 `trec-rag-2026-track-guidelines`의 적용
+대상이다.
 
-```text
-topic_id Q0 docid rank score run_id
-```
+2024년 및 2025년 세부 내용은 본 기준 자료에 포함되지 않는다. 필요 시 공식 과년도
+페이지 참조가 기준이다.
 
-RAG 제출 형식은 JSONL이며, topic마다 하나의 JSON object를 둔다. 핵심 필드는
-`metadata`, `references`, `answer`이다. `references`에는 실제 answer sentence가
-인용한 ClimbMix document id만 넣고, `answer[].citations`는 `references`에 대한
-0-based index를 사용한다.
+### 4.2 `trec-rag-2026-track-guidelines`
 
-### `pyserini-rest-api`
+2026년 task는 Retrieval (`R`)과 Retrieval-Augmented Generation (`RAG`)이다.
+2025년의 Augmented Generation-only (`AG`) task는 2026년 출력 대상에서 제외된다.
 
-Pyserini REST API 접근 방법을 정의하는 skill이다. 현재 service endpoint는 다음과
-같다.
+기본 운영값은 다음과 같다.
+
+| 항목 | 값 |
+| --- | --- |
+| Primary corpus | ClimbMix |
+| Pyserini REST index | `climbmix-400b` |
+| Topic input | `trec_rag_2026_queries.jsonl` |
+| Retrieval output | `r_output_trec_rag_2026.tsv` |
+| RAG output | `rag_output_trec_rag_2026.jsonl` |
+| Baseline retrieval depth | topic당 top 100 |
+| Baseline retrieval query | topic `title` |
+| Full information need | topic `narrative` |
+
+topic record의 필수 필드는 `id`, `title`, `narrative`이다. 모든 출력에서 topic id는
+원문 그대로 유지한다.
+
+### 4.3 `pyserini-rest-api`
+
+Pyserini REST API는 TREC RAG tracks용 공식 API로 정의되어 있다. 현재 기준 endpoint는
+다음과 같다.
 
 ```text
 http://99.251.12.72:8081
 ```
 
-index mapping은 다음과 같다.
+dataset-index mapping은 다음과 같다.
 
 | Dataset | Index |
 | --- | --- |
@@ -70,41 +94,148 @@ index mapping은 다음과 같다.
 | FineWeb-Edu | `fineweb-edu-100b-karpathy` |
 | MS MARCO V2.1 Segmented Doc | `msmarco-v2.1-doc-segmented` |
 
-주요 endpoint는 다음 두 개다.
+주요 endpoint는 다음과 같다.
 
 ```text
 GET /v1/{index}/search?query=...&hits=...
 GET /v1/{index}/doc/{docid}
 ```
 
-query는 Lucene field syntax나 Boolean operator에 의존하지 않고 일반 자연어 또는
-keyword text로 보낸다.
+검색 query는 Lucene query syntax가 아닌 analyzed text로 취급한다. fielded syntax,
+Boolean operator, required/prohibited term syntax 의존은 기준에서 제외된다. 기본
+요청에서는 `parse` parameter를 생략한다.
 
-## 3. 보안 관리
+## 5. Retrieval Task 기준
 
-GitHub에 올라가면 안 되는 항목은 `.gitignore`로 제외했다.
+Retrieval task의 입력은 `trec_rag_2026_queries.jsonl`이다. 각 topic의 `title`을
+기본 검색 query로 사용하고, `narrative`는 query rewriting, decomposition, evidence
+selection, generation 판단에 활용되는 full information need로 취급한다.
 
-- `.env`, `.env.*`
-- `.curlrc.pyserini-rest`
-- `.venv/`
-- `tmp/`
-- `data/cache/`
-- `outputs/*.tsv`, `outputs/*.jsonl`, `outputs/*.json`
-- `trec-rag-skills/`
-- Python bytecode/cache
+Retrieval 제출 파일은 standard TREC runfile 형식이다.
 
-토큰은 코드, README, command line 예시, log, output 파일에 기록하지 않는다.
-현재 파이프라인은 다음 순서로 local env file을 읽고, token 값은 출력하지 않는다.
+```text
+topic_id Q0 docid rank score run_id
+```
+
+검증 기준은 다음과 같다.
+
+| 항목 | 기준 |
+| --- | --- |
+| 열 개수 | line당 whitespace-separated 6 columns |
+| topic coverage | 명시된 subset이 없는 경우 모든 input topic 포함 |
+| rank | topic별 1부터 시작, ascending order |
+| score | topic 내부 non-increasing order |
+| docid | ClimbMix retriever 또는 custom index에서 반환된 document id |
+| Q0 | 고정 문자열 `Q0` |
+
+제출 row 수는 topic별로 동일할 필요가 없으며, 고정 maximum은 정의되어 있지 않다.
+baseline은 topic당 top 100 검색 결과를 사용한다.
+
+## 6. RAG Task 기준
+
+RAG task는 검색된 ClimbMix 문서를 evidence source로 사용하여 grounded answer를
+생성하는 task이다. 2026년 RAG task는 fixed evidence set을 전제로 하지 않으며,
+system이 retrieval을 수행한다.
+
+RAG 제출 파일은 JSONL 형식이며 topic당 하나의 JSON object를 기록한다. 핵심 schema는
+다음과 같다.
+
+```json
+{
+  "metadata": {
+    "team_id": "team-id",
+    "run_id": "run-id",
+    "type": "automatic",
+    "narrative_id": "topic-id",
+    "title": "original title",
+    "narrative": "original narrative",
+    "prompt": "optional prompt"
+  },
+  "references": ["climbmix-docid"],
+  "answer": [
+    {
+      "text": "Evidence-grounded sentence.",
+      "citations": [0]
+    }
+  ]
+}
+```
+
+RAG validation 기준은 다음과 같다.
+
+| 항목 | 기준 |
+| --- | --- |
+| JSONL | line당 complete JSON object |
+| topic coverage | input topic당 1 object |
+| required fields | `metadata`, `references`, `answer` |
+| citation index | `references`에 대한 zero-indexed integer |
+| reference usage | 모든 reference는 최소 하나의 sentence에서 citation 필요 |
+| grounding | answer claim은 cited reference로 지원 필요 |
+
+`metadata.type`은 answer text 작성 방식에 따른다. agent 또는 사람이 topic별 evidence를
+검토하고 문장을 작성한 경우 `manual`이다. 선언된 generator가 per-topic manual
+composition 없이 answer text를 생성한 경우 `automatic`이다.
+
+## 7. 구현된 Retrieval Pipeline
+
+현재 구현은 Python 표준 라이브러리만 사용한다. 외부 runtime dependency는 없다.
+
+처리 흐름은 다음과 같다.
+
+1. dotenv 후보 파일에서 Pyserini token과 base URL 로드
+2. topic JSONL 파싱 및 필수 필드 검증
+3. topic `title` 기반 ClimbMix 검색 실행
+4. topic별 raw search response를 `data/cache/pyserini`에 저장
+5. TREC runfile row 생성
+6. output TSV 저장
+7. runfile validation 수행
+
+기본 설정값은 `configs/search_pipeline.json`에 정의되어 있다.
+
+```json
+{
+  "base_url": "http://99.251.12.72:8081",
+  "index": "climbmix-400b",
+  "default_hits": 100,
+  "run_id": "pyserini-climbmix-baseline",
+  "topic_file": "trec_rag_2026_queries.jsonl",
+  "retrieval_output": "outputs/r_output_trec_rag_2026.tsv",
+  "cache_dir": "data/cache/pyserini"
+}
+```
+
+## 8. 보안 정책
+
+저장소 공개 기준에서 제외되는 항목은 다음과 같다.
+
+| 항목 | 사유 |
+| --- | --- |
+| `.env`, `.env.*` | API token 및 local secret 포함 가능성 |
+| `.curlrc.pyserini-rest` | Authorization header 포함 |
+| `.venv/` | local runtime environment |
+| `tmp/` | API response 임시 파일 |
+| `data/cache/` | retrieved document cache |
+| `outputs/*.tsv`, `outputs/*.jsonl`, `outputs/*.json` | run output 및 평가 산출물 |
+| `trec-rag-skills/` | local 작업용 clone, token 및 nested git metadata 포함 가능 |
+| `trec_rag_skills/.env*` | 공개용 skill snapshot 내부 secret 방지 |
+| `trec_rag_skills/.git/` | nested repository metadata 방지 |
+| `__pycache__/`, `*.pyc` | Python bytecode |
+
+공개 저장소에는 `.env.example`만 포함한다. 실제 token은 코드, README, command line
+example, log, output 파일에 기록하지 않는다.
+
+token 탐색 순서는 다음과 같다.
 
 1. `.env.local`
 2. `.env`
 3. `trec-rag-skills/.env.local`
 4. `trec-rag-skills/.env`
+5. `trec_rag_skills/.env.local`
+6. `trec_rag_skills/.env`
 
-지원하는 token 변수명은 `PYSERINI_API_TOKEN`과 `PYSERINI_TOKEN`이다. GitHub에
-공개할 값은 `.env.example`에 빈 placeholder로만 둔다.
+지원 변수명은 `PYSERINI_API_TOKEN` 및 `PYSERINI_TOKEN`이다.
 
-## 4. 저장소 구조
+## 9. 저장소 구조
 
 ```text
 .
@@ -119,78 +250,77 @@ GitHub에 올라가면 안 되는 항목은 `.gitignore`로 제외했다.
 |   `-- trec2026/
 |       |-- __init__.py
 |       `-- search_pipeline.py
+|-- trec_rag_skills/
+|   `-- skills/
 |-- .env.example
 |-- .gitignore
 `-- README.md
 ```
 
-## 5. 실행 방법
+## 10. 실행 절차
 
-Python 가상환경을 만든다.
+가상환경 생성:
 
 ```powershell
 python -m venv .venv
 ```
 
-현재 검색 파이프라인은 Python 표준 라이브러리만 사용하므로 별도 runtime package
-설치가 필요 없다.
-
-CLI 연결을 확인한다.
+CLI 확인:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py --help
 ```
 
-API health check를 실행한다.
+API health check:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py health
 ```
 
-단일 query 검색을 실행한다.
+단일 query 검색:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py search "Albert Einstein" --hits 5
 ```
 
-공식 topic 파일을 프로젝트 루트에 `trec_rag_2026_queries.jsonl`로 둔 뒤 Retrieval
-runfile을 생성한다.
+official topic file 기준 Retrieval runfile 생성:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py run
 ```
 
-생성된 runfile을 검증한다.
+Retrieval runfile 검증:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py validate-run
 ```
 
-공식 topic 파일이 없을 때는 sample topic으로 smoke test를 수행할 수 있다.
+sample topic 기준 smoke test:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\trec_search.py run --topics data\sample_trec_rag_2026_queries.jsonl --out outputs\sample_r_output_trec_rag_2026.tsv --hits 3 --run-id smoke-test
 .\.venv\Scripts\python.exe scripts\trec_search.py validate-run --topics data\sample_trec_rag_2026_queries.jsonl --runfile outputs\sample_r_output_trec_rag_2026.tsv
 ```
 
-## 6. 현재 검증 결과
+## 11. 초기 검증 결과
 
-초기 구축 시 다음 검증을 완료했다.
+| 검증 항목 | 결과 |
+| --- | --- |
+| Python compile check | 통과 |
+| Pyserini REST root endpoint | 접근 성공 |
+| `climbmix-400b` authenticated search | 성공 |
+| health query | `Albert Einstein` 기준 candidate 반환 |
+| document payload | 첫 candidate에 document body 포함 |
+| sample runfile generation | 2 topics, 6 rows |
+| sample runfile validation | `valid: true` |
 
-- Python compile check 통과
-- Pyserini REST root endpoint 접근 성공
-- `climbmix-400b` authenticated search 성공
-- `Albert Einstein` health query에서 document body 포함 candidate 반환 확인
-- sample topic 2개 기준 Retrieval runfile 6 rows 생성
-- sample runfile validator 결과: `valid: true`
+## 12. 후속 개발 항목
 
-## 7. 향후 작업
-
-다음 단계는 RAG output 생성을 위한 evidence selection과 sentence-level citation
-packaging이다.
-
-- top 100 retrieval cache를 topic별 evidence packet으로 정리
-- document text normalization 및 passage selection 추가
-- RAG answer schema validator 구현
-- `rag_output_trec_rag_2026.jsonl` 생성 CLI 추가
-- official topic file 수령 후 full run 생성 및 검증
+| 우선순위 | 항목 |
+| --- | --- |
+| 1 | official `trec_rag_2026_queries.jsonl` 수령 후 full Retrieval run 생성 |
+| 2 | topic별 top 100 evidence packet 정규화 |
+| 3 | document text normalization 및 passage selection |
+| 4 | RAG answer schema validator 구현 |
+| 5 | `rag_output_trec_rag_2026.jsonl` 생성 CLI 구현 |
+| 6 | submission logistics 공식 업데이트 반영 |
