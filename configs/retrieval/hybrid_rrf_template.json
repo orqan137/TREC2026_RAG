@@ -1,0 +1,20 @@
+{
+  "experiment_id": "retrieval_hybrid_rrf_template",
+  "track_year": 2026,
+  "task": "R",
+  "retrievers": [
+    {"name": "bm25", "enabled": true},
+    {"name": "sparse_learned", "enabled": false},
+    {"name": "dense", "enabled": false},
+    {"name": "hyde_dense", "enabled": false}
+  ],
+  "fusion": {
+    "method": "rrf",
+    "k": 60
+  },
+  "depth": {
+    "per_retriever": 1000,
+    "final": 100
+  },
+  "output": "outputs/runs/r_output_trec_rag_2026_hybrid.tsv"
+}

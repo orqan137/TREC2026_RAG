@@ -1,0 +1,16 @@
+{
+  "experiment_id": "generation_rag_citation_template",
+  "track_year": 2026,
+  "task": "RAG",
+  "input_run": "outputs/runs/r_output_trec_rag_2026.tsv",
+  "evidence_selection": {
+    "method": "top_ranked_or_nugget_cluster",
+    "max_documents": 10
+  },
+  "generation": {
+    "mode": "evidence_grounded",
+    "sentence_level_citations": true,
+    "metadata_type": "automatic"
+  },
+  "output": "outputs/submissions/rag_output_trec_rag_2026.jsonl"
+}

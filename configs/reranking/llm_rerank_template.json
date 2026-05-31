@@ -1,0 +1,12 @@
+{
+  "experiment_id": "rerank_llm_template",
+  "track_year": 2026,
+  "input_run": "outputs/runs/r_output_trec_rag_2026.tsv",
+  "candidate_depth": 100,
+  "method": "listwise_or_pointwise",
+  "window": {
+    "size": 20,
+    "stride": 10
+  },
+  "output": "outputs/runs/r_output_trec_rag_2026_reranked.tsv"
+}

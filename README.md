@@ -18,6 +18,8 @@ baseline이며, RAG 생성 단계 확장을 고려한 입력, 출력, 캐시, �
 | Intro skill | `trec_rag_skills/skills/trec-rag-intro` | 트랙 개요, 공개 상태, 참가 안내, 조직 정보 |
 | Track guidelines | `trec_rag_skills/skills/trec-rag-2026-track-guidelines` | 2026 task 정의, 제출 형식, baseline, validation 기준 |
 | Pyserini REST API | `trec_rag_skills/skills/pyserini-rest-api` | API endpoint, 인증, 검색, 문서 조회, 오류 처리 |
+| 2025 experiment analysis | `docs/trec2025_experiment_analysis.md` | TREC 2025 RAG 실험 패턴 및 2026 구조 반영 기준 |
+| Project structure | `docs/project_structure.md` | 폴더 책임, 산출물 위치, Git 추적 기준 |
 | 구현 코드 | `src/trec2026/search_pipeline.py` | Retrieval 실행, 캐시 저장, runfile 생성, runfile 검증 |
 | 실행 wrapper | `scripts/trec_search.py` | CLI 진입점 |
 | 기본 설정 | `configs/search_pipeline.json` | index, hits, output path, cache path, run id |
@@ -198,13 +200,32 @@ composition 없이 answer text를 생성한 경우 `automatic`이다.
   "index": "climbmix-400b",
   "default_hits": 100,
   "run_id": "pyserini-climbmix-baseline",
-  "topic_file": "trec_rag_2026_queries.jsonl",
-  "retrieval_output": "outputs/r_output_trec_rag_2026.tsv",
+  "topic_file": "data/topics/trec_rag_2026_queries.jsonl",
+  "retrieval_output": "outputs/runs/r_output_trec_rag_2026.tsv",
   "cache_dir": "data/cache/pyserini"
 }
 ```
 
-## 8. 보안 정책
+## 8. TREC 2025 실험 분석 기반 구조
+
+TREC RAG 2025 proceedings 및 baseline 공지에서 반복적으로 확인되는 실험 흐름은
+retrieval, fusion/reranking, evidence selection, generation, validation이다. 2026
+작업공간은 이 흐름을 기준으로 다음 구조를 적용한다.
+
+| 단계 | 디렉터리 | 적용 목적 |
+| --- | --- | --- |
+| Topic/corpus/qrels 관리 | `data/topics`, `data/corpus`, `data/qrels`, `data/nuggets` | official input과 평가 자료 분리 |
+| Organizer baseline 및 candidate cache | `data/baselines`, `data/cache` | baseline run, API response, evidence packet 관리 |
+| Retrieval 실험 | `experiments/retrieval`, `configs/retrieval` | BM25, sparse/dense hybrid, HyDE, RRF, query decomposition |
+| Reranking 실험 | `experiments/reranking`, `configs/reranking` | LLM/listwise/pointwise reranking, sliding-window reranking |
+| Evidence selection | `experiments/evidence_selection` | nugget extraction, clustering, few-document packaging |
+| Generation 실험 | `experiments/generation`, `configs/generation` | sentence-level citation, claim-citation alignment |
+| End-to-end RAG | `experiments/rag_end_to_end`, `configs/experiments` | retrieval-to-answer ablation 및 통합 실험 |
+| 산출물 | `outputs/runs`, `outputs/submissions`, `outputs/metrics`, `outputs/reports`, `outputs/logs` | runfile, JSONL, metric, report, validator log 분리 |
+
+세부 분석 근거는 `docs/trec2025_experiment_analysis.md`에 기록한다.
+
+## 9. 보안 정책
 
 저장소 공개 기준에서 제외되는 항목은 다음과 같다.
 
@@ -235,15 +256,37 @@ token 탐색 순서는 다음과 같다.
 
 지원 변수명은 `PYSERINI_API_TOKEN` 및 `PYSERINI_TOKEN`이다.
 
-## 9. 저장소 구조
+## 10. 저장소 구조
 
 ```text
 .
 |-- configs/
+|   |-- retrieval/
+|   |-- reranking/
+|   |-- generation/
+|   |-- experiments/
 |   `-- search_pipeline.json
 |-- data/
-|   `-- sample_trec_rag_2026_queries.jsonl
+|   |-- topics/
+|   |-- corpus/
+|   |-- baselines/
+|   |-- qrels/
+|   |-- nuggets/
+|   `-- cache/
+|-- docs/
+|-- experiments/
+|   |-- retrieval/
+|   |-- reranking/
+|   |-- evidence_selection/
+|   |-- generation/
+|   |-- rag_end_to_end/
+|   `-- relevance_judgment/
 |-- outputs/
+|   |-- runs/
+|   |-- submissions/
+|   |-- metrics/
+|   |-- reports/
+|   `-- logs/
 |-- scripts/
 |   `-- trec_search.py
 |-- src/
@@ -257,7 +300,7 @@ token 탐색 순서는 다음과 같다.
 `-- README.md
 ```
 
-## 10. 실행 절차
+## 11. 실행 절차
 
 가상환경 생성:
 
@@ -298,11 +341,11 @@ Retrieval runfile 검증:
 sample topic 기준 smoke test:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\trec_search.py run --topics data\sample_trec_rag_2026_queries.jsonl --out outputs\sample_r_output_trec_rag_2026.tsv --hits 3 --run-id smoke-test
-.\.venv\Scripts\python.exe scripts\trec_search.py validate-run --topics data\sample_trec_rag_2026_queries.jsonl --runfile outputs\sample_r_output_trec_rag_2026.tsv
+.\.venv\Scripts\python.exe scripts\trec_search.py run --topics data\topics\sample_trec_rag_2026_queries.jsonl --out outputs\runs\sample_r_output_trec_rag_2026.tsv --hits 3 --run-id smoke-test
+.\.venv\Scripts\python.exe scripts\trec_search.py validate-run --topics data\topics\sample_trec_rag_2026_queries.jsonl --runfile outputs\runs\sample_r_output_trec_rag_2026.tsv
 ```
 
-## 11. 초기 검증 결과
+## 12. 초기 검증 결과
 
 | 검증 항목 | 결과 |
 | --- | --- |
@@ -314,7 +357,7 @@ sample topic 기준 smoke test:
 | sample runfile generation | 2 topics, 6 rows |
 | sample runfile validation | `valid: true` |
 
-## 12. 후속 개발 항목
+## 13. 후속 개발 항목
 
 | 우선순위 | 항목 |
 | --- | --- |

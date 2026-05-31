@@ -1,0 +1,12 @@
+{
+  "experiment_id": "retrieval_pyserini_climbmix_bm25",
+  "track_year": 2026,
+  "task": "R",
+  "retriever": "pyserini-rest",
+  "index": "climbmix-400b",
+  "query_source": "title",
+  "hits": 100,
+  "fusion": null,
+  "reranker": null,
+  "output": "outputs/runs/r_output_trec_rag_2026.tsv"
+}

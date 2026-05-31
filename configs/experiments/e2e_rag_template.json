@@ -1,0 +1,19 @@
+{
+  "experiment_id": "e2e_rag_template",
+  "track_year": 2026,
+  "pipeline": [
+    "retrieval",
+    "reranking",
+    "evidence_selection",
+    "generation",
+    "validation"
+  ],
+  "retrieval_config": "configs/retrieval/pyserini_climbmix_bm25.json",
+  "reranking_config": null,
+  "generation_config": "configs/generation/rag_citation_template.json",
+  "outputs": {
+    "runfile": "outputs/runs/r_output_trec_rag_2026.tsv",
+    "rag_jsonl": "outputs/submissions/rag_output_trec_rag_2026.jsonl",
+    "metrics": "outputs/metrics/e2e_rag_template.json"
+  }
+}
