@@ -1,0 +1,9 @@
+{
+  "base_url": "http://99.251.12.72:8081",
+  "index": "climbmix-400b",
+  "default_hits": 100,
+  "run_id": "pyserini-climbmix-baseline",
+  "topic_file": "trec_rag_2026_queries.jsonl",
+  "retrieval_output": "outputs/r_output_trec_rag_2026.tsv",
+  "cache_dir": "data/cache/pyserini"
+}

@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.curlrc.pyserini-rest
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+tmp/
+data/cache/
+outputs/*.tsv
+outputs/*.jsonl
+outputs/*.json
+trec-rag-skills/
